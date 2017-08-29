@@ -36,18 +36,25 @@ export class Bitrix24{
      * @return {Promise} Return as object
      */
     async callMethod(method:string, param: any = {}){
-        let url:string;
-        
-        if(this.init.config.mode == "api"){
-            //FIX ME: This implementation always refresh token before request, please fix it
-            const token = await this.auth.refreshToken();
-            param['auth'] = token.access_token;
-            url = `${this.init.config.host}/rest/${method}?${qs.stringify(param)}`;
-        }else{
-            url = `${this.init.config.host}/rest/${this.init.config.user_id}/${this.init.config.code}/${method}?${qs.stringify(param)}`
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            let url;
+            let access_token;
+            if (this.init.config.mode == "api") {
+                if (this.init.config.refresh === true) {
+                    access_token = yield this.auth.refreshToken().access_token;
+                }
+                else {
+                    access_token = this.init.methods.retriveToken().access_token;
+                }
 
-        const result = await request.get(url);
-        return JSON.parse(result)
+                param['auth'] = access_token;
+                url = `${this.init.config.host}/rest/${method}?${qs.stringify(param)}`;
+            }
+            else {
+                url = `${this.init.config.host}/rest/${this.init.config.user_id}/${this.init.config.code}/${method}?${qs.stringify(param)}`;
+            }
+            const result = yield request.get(url);
+            return JSON.parse(result);
+        });
     }
 }
